@@ -1,0 +1,10 @@
+Copyright (C) 2014 Ahmad Draidi
+E-Mail: ar2000jp@gmail.com
+Please see the source code file for license details.
+
+MediaWatch.py is a small program that watches a file in a folder, and
+    adds the entries in that file to a queue when the file is modified,
+    and then the queue is played back using an external media player.
+
+For the latest version, please check out:
+    https://github.com/Ar2000jp/MediaWatch.py
