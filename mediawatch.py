@@ -29,6 +29,7 @@ watchFileName = "list.txt"
 
 mediaPath = "/home/ar2000jp/Music/"
 mediaPlayer = "mpv"
+mediaPlayerParams = "--quiet"
 
 def watchFile(fd, queue):
     while (1):
@@ -60,7 +61,7 @@ def main():
 	#print 'm l'
 	entry = queue.get()
 	#print mediaPath + entry
-	subprocess.call([mediaPlayer, mediaPath + entry])
+	subprocess.call([mediaPlayer, mediaPlayerParams, mediaPath + entry])
 
     inotifyx.rm_watch(fd, wd)
     os.close(fd)
