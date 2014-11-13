@@ -23,47 +23,72 @@ import Queue
 import threading
 import subprocess
 import os
+import time
+import shlex
 
-watchPath = "/home/ar2000jp/Public/"
-watchFileName = "list.txt"
+watchPath = "/home/ar2000jp/Public"
+watchFilePrefix = "cap"
 
-mediaPath = "/home/ar2000jp/Music/"
+mediaPath = "/home/ar2000jp/Music"
 mediaPlayer = "mpv"
-mediaPlayerParams = "--quiet"
+mediaPlayerParams = "--no-terminal"
 
-def watchFile(fd, queue):
-    while (1):
-	#print 'wf l'
-	inotifyx.get_events(fd)
-	if not (os.path.exists(watchPath + watchFileName)):
-	    continue
-	f = open(watchPath + watchFileName, "r")
-	for line in f:
-	    for piece in line.strip().split():
-		queue.put(piece)
-	    #queue.put(line.strip())
-	    #print line
-	f.close()
-	os.remove(watchPath + watchFileName)
+readDelay = 2
+eventTimeout = 10
 
-def main():
-    #print 'm e'
+def watchFiles(queue):
+    mediaFound = False
     fd = inotifyx.init()
-    queue = Queue.Queue()
     wd = inotifyx.add_watch(fd, watchPath, inotifyx.IN_CLOSE)
 
-    # Start watchFile() thread
-    thread = threading.Thread(target=watchFile, args=(fd,queue))
+    while (1):
+	# Wait for an event with timeout.
+	event = inotifyx.get_events(fd, eventTimeout)
+	print("Event caught, or timed-out.")
+
+	# Wait before reading files
+	time.sleep(readDelay)
+
+	for fname in os.listdir(watchPath):
+	    fpath = os.path.join(watchPath, fname)
+	    if os.path.isfile(fpath) and fname.startswith(watchFilePrefix):
+		mediaFound = False
+		print ("Processing file: " + fpath)
+		f = open(fpath, "r")
+
+		for line in f:
+		    pieces = shlex.split(line.strip())
+		    for p in pieces:
+			queue.put(p)
+			print ("Found: " + p)
+			mediaFound = True
+		f.close()
+
+		# Only remove the file if we found something in it
+		if(mediaFound):
+		    os.remove(fpath)
+		    print("Deleting file.")
+
+	# Drain events from file operations.
+	e = inotifyx.get_events(fd, 0)
+	while e:
+	    e = inotifyx.get_events(fd, 0)
+
+    inotifyx.rm_watch(fd, wd)
+    os.close(fd)
+
+def main():
+    queue = Queue.Queue()
+
+    # Start watchFiles() thread
+    thread = threading.Thread(target=watchFiles, args=([queue]))
     thread.daemon = True
     thread.start()
 
     while (1):
-	#print 'm l'
 	entry = queue.get()
-	#print mediaPath + entry
-	subprocess.call([mediaPlayer, mediaPlayerParams, mediaPath + entry])
-
-    inotifyx.rm_watch(fd, wd)
-    os.close(fd)
+	entryPath = os.path.join(mediaPath, entry)
+	print ("Playing: " + entryPath)
+	subprocess.call([mediaPlayer, mediaPlayerParams, entryPath])
 
 main()
