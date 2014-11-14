@@ -28,6 +28,7 @@ import shlex
 
 watchPath = "/home/ar2000jp/Public"
 watchFilePrefix = "cap"
+watchFileSuffix = ".txt"
 
 mediaPath = "/home/ar2000jp/Music"
 mediaPlayer = "mpv"
@@ -51,7 +52,8 @@ def watchFiles(queue):
 
 	for fname in os.listdir(watchPath):
 	    fpath = os.path.join(watchPath, fname)
-	    if os.path.isfile(fpath) and fname.startswith(watchFilePrefix):
+	    if (os.path.isfile(fpath) and fname.startswith(watchFilePrefix)
+			and fname.endswith(watchFileSuffix)):
 		mediaFound = False
 		print ("Processing file: " + fpath)
 		f = open(fpath, "r")
